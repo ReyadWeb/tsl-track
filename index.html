@@ -24,9 +24,9 @@
 </head>
 <body>
 <div class="card">
-  <h3 id="title">TSL Tracking for MSC</h3>
+  <h3 id="title">TSL Tracking</h3>
   <p><b>Booking #:</b> <code id="ref"></code></p>
-  <p class="muted">Click <b>Copy</b>, then <b>Go to tracking site</b>. It will open MSC with your booking.</p>
+  <p class="muted">Click <b>Copy</b>, then <b>Go to tracking site</b>. For “copy & go” carriers, paste the number there.</p>
   <div class="group-button">
     <button class="primary" id="copyBtn">Copy</button>
     <button class="secondary" id="openBtn">Go to tracking site</button>
@@ -36,17 +36,61 @@
 </div>
 
 <script>
-  // Read booking from URL: ?ref=EBKG10149130
-  const qs  = new URLSearchParams(location.search);
+  // --- read params ---
+  const qs = new URLSearchParams(location.search);
   const ref = (qs.get('ref') || '').trim();
+  const carrierRaw = (qs.get('carrier') || '').trim();
 
-  // Basic validation (not strict; just to catch typos)
+  // --- helpers ---
+  const norm = s => String(s||'').toLowerCase().replace(/[\s\-_.]+/g,'').trim();
   const refOK = /^[A-Za-z0-9._\-\/\s]{3,50}$/.test(ref);
 
-  // Show booking number on page
+  // --- carriers ---
+  const carriers = [
+    // Deep-link carriers
+    { name:'Maersk',      match:/^maersk$/,      mode:'deeplink',
+      to: r => `https://www.maersk.com/tracking/#tracking/${encodeURIComponent(r)}` },
+
+    { name:'Hapag-Lloyd', match:/^hapaglloyd|^hapaglloyd$|^hapag-lloyd$|^hapag lloyd$/, mode:'deeplink',
+      to: r => `https://www.hapag-lloyd.com/en/online-business/track/track-by-booking-solution.html?booking=${encodeURIComponent(r)}` },
+
+    // MSC: special deep-link with Base64 params
+    { name:'MSC',         match:/^msc$/,         mode:'deeplink',
+      to: r => {
+        // MSC expects base64 of `trackingNumber=<r>&trackingMode=1`
+        const params = btoa(`trackingNumber=${r}&trackingMode=1`);
+        return `https://www.msc.com/en/track-a-shipment?params=${params}`;
+      }},
+
+    // Copy-&-Go carriers (no number in URL)
+    { name:'CMA CGM',     match:/^cma$|^cmacgm$|^cma-cgm$/,      mode:'copygo',
+      url:'https://www.cma-cgm.com/ebusiness/tracking' },
+
+    { name:'ShipmentLink', match:/^shipmentlink$/,               mode:'copygo',
+      url:'https://ct.shipmentlink.com/servlet/TDB1_CargoTracking.do' },
+
+    { name:'Yang Ming',    match:/^yangming$|^yangming$|^yang ming$/, mode:'copygo',
+      url:'https://www.yangming.com/en' },
+
+    { name:'Höegh Autoliners', match:/^hoegh$|^hoeghautoliners$|^hoegh-autoliners$/, mode:'copygo',
+      url:'https://www.hoeghautoliners.com/my-cargo' },
+
+    { name:'HMM', match:/^hmm$/, mode:'copygo',
+      url:'https://www.hmm21.com/e-service/general/DashBoard.do' },
+
+    { name:'ONE (Ocean Network Express)', match:/^one$|^oneline$|^oceannetworkexpress$/, mode:'copygo',
+      url:'https://ecomm.one-line.com/one-ecom/manage-shipment/cargo-tracking' },
+  ];
+
+  const cfg = carriers.find(c => c.match.test(norm(carrierRaw))) || null;
+
+  // --- render ---
+  document.getElementById('title').textContent = cfg
+    ? `TSL Tracking for ${cfg.name}`
+    : 'TSL Tracking';
   document.getElementById('ref').textContent = ref || '—';
 
-  // Copy to clipboard
+  // Copy
   document.getElementById('copyBtn').addEventListener('click', async () => {
     const status = document.getElementById('status');
     try {
@@ -62,22 +106,16 @@
     }
   });
 
-  // Build MSC URL with Base64-encoded params and open it
+  // Open tracking
   document.getElementById('openBtn').addEventListener('click', () => {
     const status = document.getElementById('status');
+    if (!cfg) { status.textContent = 'Carrier not recognized. Open their site manually.'; return; }
     if (!ref) { status.textContent = 'Missing booking number (?ref=...).'; return; }
 
-    // Exactly matches MSC format: trackingNumber=<REF>&trackingMode=1  → base64
-    const params = btoa(`trackingNumber=${ref}&trackingMode=1`);
-    const url = `https://www.msc.com/en/track-a-shipment?params=${params}`;
-
+    const url = cfg.mode === 'deeplink' ? cfg.to(ref) : cfg.url;
     const a = document.getElementById('openLink');
-    a.href = url;
-    a.click();
-
-    setTimeout(() => {
-      status.textContent = 'If no tab opened, allow popups and click again.';
-    }, 250);
+    a.href = url; a.click();
+    setTimeout(() => { status.textContent = 'If no tab opened, allow popups and click again.'; }, 250);
   });
 
   if (!refOK && ref) {
