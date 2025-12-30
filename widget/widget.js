@@ -14,11 +14,11 @@
     { name:'MSC', match:/^msc$/, mode:'copygo', url:'https://www.msc.com/en/track-a-shipment?link=' },
     { name:'CMA CGM', match:/^cma$|^cma cgm$|^cma-cgm$/, mode:'copygo', url:'https://www.cma-cgm.com/ebusiness/tracking' },
     { name:'ShipmentLink', match:/^shipmentlink$/, mode:'copygo', url:'https://ct.shipmentlink.com/servlet/TDB1_CargoTracking.do' },
+    { name:'Evergreen', match:/^evergreen$|^everygreen$/, mode:'copygo', url:'https://ct.shipmentlink.com/servlet/TDB1_CargoTracking.do' },
     { name:'Yang Ming', match:/^yangming$|^yang ming$/, mode:'copygo', url:'https://www.yangming.com/en' },
     { name:'Höegh Autoliners', match:/^hoegh|^hoeghautoliners$/, mode:'copygo', url:'https://www.hoeghautoliners.com/my-cargo' },
     { name:'HMM', match:/^hmm$/, mode:'copygo', url:'https://www.hmm21.com/e-service/general/DashBoard.do' },
     { name:'ONE (Ocean Network Express)', match:/^one$|^one line$|^oceannetworkexpress$/, mode:'copygo', url:'https://ecomm.one-line.com/one-ecom/manage-shipment/cargo-tracking' },
-    { name:'Evergreen', match:/^evergreen$|^everygreen$/, mode:'copygo', url:'https://ct.shipmentlink.com/servlet/TDB1_CargoTracking.do' },
   ];
   const cfg = CARRIERS.find(c => c.match.test(norm(carrierRaw)));
 
